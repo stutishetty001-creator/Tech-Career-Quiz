@@ -1,0 +1,179 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Byte by Byte — Career Quiz</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Lobster&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin:0; padding:0; }
+body { font-family: 'Poppins', sans-serif; background:#f7f5ff; color:#222; }
+
+.home, .quiz-wrap, .result-wrap { min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:30px; }
+.home { background: linear-gradient(180deg, rgba(155,100,222,0.14), rgba(140,80,200,0.06)); }
+.brand { font-family: 'Lobster', cursive; font-size:2.6rem; color:#5a2ca0; margin-bottom:16px; }
+.subtitle { margin-bottom:22px; max-width:86%; color:#333; }
+.btn { background:#9c6ade; color:white; padding:12px 22px; border-radius:26px; border:none; font-size:1rem; cursor:pointer; margin:5px; }
+.btn:active { transform:translateY(1px); }
+
+.quiz-wrap { display:none; background:#f0e9ff; }
+.quiz-card { width:100%; max-width:520px; background:#fff; border-radius:16px; padding:22px; box-shadow:0 8px 28px rgba(40,12,80,0.08); }
+h2.q { font-family: 'Lobster', cursive; color:#5a2ca0; margin-bottom:12px; }
+.options { display:flex; flex-direction:column; gap:12px; margin-top:8px; }
+.opt-btn { padding:12px 14px; border-radius:14px; border:none; cursor:pointer; text-align:left; background:#efe3ff; color:#2f174b; font-weight:600; }
+.opt-btn.selected { background:#9c6ade; color:white; }
+.controls { display:flex; justify-content:space-between; align-items:center; margin-top:18px; }
+
+.result-wrap { display:none; background:#f7f5ff; }
+.result-card { width:100%; max-width:780px; margin:18px auto; background:rgba(255,255,255,0.95); border-radius:14px; padding:20px; box-shadow:0 8px 28px rgba(40,12,80,0.06); text-align:left; }
+.result-card h2 { font-family: 'Lobster', cursive; color:#5a2ca0; margin-bottom:8px; }
+.result-item { margin:8px 0; }
+@media (max-width:420px) { .brand { font-size:2rem; } .quiz-card { padding:18px; } }
+</style>
+</head>
+<body>
+
+<div id="home" class="home">
+  <div class="brand">Byte by Byte</div>
+  <div class="subtitle">Here's the best way to discover a career for yourself in Technology</div>
+  <button id="startBtn" class="btn">Start Quiz</button>
+</div>
+
+<div id="quizWrap" class="quiz-wrap">
+  <div class="quiz-card">
+    <div class="q-top">
+      <div class="progress" id="progressText">Question 1 of 22</div>
+    </div>
+    <h2 class="q" id="questionText">Question text</h2>
+    <div class="options" id="optionsList"></div>
+    <div class="controls">
+      <button id="prevBtn" class="btn" style="display:none;background:#ddd;color:#333;">Previous</button>
+      <button id="nextBtn" class="btn" disabled>Next</button>
+    </div>
+  </div>
+</div>
+
+<div id="resultWrap" class="result-wrap">
+  <div class="result-card" id="careerCard"></div>
+  <div style="text-align:center;">
+    <button id="restartBtn" class="btn">Restart Quiz</button>
+    <button id="homeBtn" class="btn" style="background:#6fc2a6;">Back to Home</button>
+  </div>
+</div>
+
+<script>
+// Quiz data with 22 questions
+const quizData = [
+  // Category 1: Personal Interests & Skills
+  { q:"Which of the following activities do you enjoy the most?", opts:["Coding/programming","Designing graphics or layouts","Solving technical problems","Managing projects or teams"], map:["Software","UIUX","Software","Management"] },
+  { q:"How comfortable are you with computers and technology?", opts:["Beginner","Moderate","Advanced"], map:["Management","Software","Software"] },
+  { q:"Which subjects do you enjoy the most at school/college?", opts:["Mathematics","Science","Computer Science","Arts","Management"], map:["Software","Data","Software","UIUX","Management"] },
+  { q:"Are you interested in creating websites, apps, or software?", opts:["Yes","No","Maybe"], map:["Software","UIUX","Software"] },
+  { q:"Do you prefer working independently or in a team?", opts:["Independently","In a team","Both"], map:["Software","Management","Software"] },
+  { q:"How much do you enjoy problem-solving tasks?", opts:["Low","Medium","High"], map:["UIUX","Software","Software"] },
+
+  // Category 2: Career Awareness
+  { q:"Which IT career sounds interesting to you?", opts:["Software Developer","Web Developer","Database Administrator","UI/UX Designer","IT Manager","Data Analyst"], map:["Software","Software","DBA","UIUX","Management","Data"] },
+  { q:"Do you know what a Business Analyst does?", opts:["Yes","No","Somewhat"], map:["Data","Management","Data"] },
+  { q:"Have you heard of roles like Product Manager or Project Manager in IT?", opts:["Yes","No"], map:["Management","Software"] },
+  { q:"Which type of IT role do you prefer?", opts:["Technical","Creative","Managerial","Analytical"], map:["Software","UIUX","Management","Data"] },
+  { q:"Are you interested in learning programming languages like Python, Java, or JavaScript?", opts:["Yes","No","Maybe"], map:["Software","UIUX","Software"] },
+
+  // Category 3: Career Preferences & Lifestyle
+  { q:"Do you prefer working in a large company or a startup?", opts:["Large company","Startup","No preference"], map:["Management","Software","Software"] },
+  { q:"How important is salary to you when choosing a career?", opts:["Very important","Important","Not important"], map:["Management","Software","UIUX"] },
+  { q:"Would you like a job with flexible working hours or a fixed schedule?", opts:["Flexible","Fixed","Either"], map:["UIUX","Management","Software"] },
+  { q:"Are you willing to pursue higher education for better career opportunities?", opts:["Yes","No","Maybe"], map:["Software","UIUX","Management"] },
+  { q:"Do you prefer remote work, office work, or hybrid work?", opts:["Remote","Office","Hybrid"], map:["UIUX","Management","Software"] },
+
+  // Category 4: Skills & Learning
+  { q:"Are you willing to learn new software, tools, or technologies regularly?", opts:["Yes","No","Maybe"], map:["Software","UIUX","Management"] },
+  { q:"Which skills interest you the most?", opts:["Coding","Designing","Data Analysis","Management","Communication"], map:["Software","UIUX","Data","Management","Management"] },
+  { q:"How much do you enjoy creative work like designing websites or apps?", opts:["Low","Medium","High"], map:["Software","UIUX","UIUX"] },
+  { q:"Do you prefer working on practical projects or theoretical studies?", opts:["Practical","Theoretical","Both"], map:["Software","Data","Software"] },
+  { q:"Are you comfortable with data, numbers, and analytics?", opts:["Yes","No","Somewhat"], map:["Data","UIUX","Data"] },
+  { q:"Would you like to start your own tech business someday?", opts:["Yes","No","Maybe"], map:["Management","Software","UIUX"] }
+];
+
+// Career details
+const careers = {
+  "Software": { title:"Software Developer", edu:"BSc IT / BCA / MSc IT", skills:"Java, Python, JavaScript", jobType:"Coding-heavy", salary:"?3-12 LPA", future:"High demand" },
+  "Data": { title:"Data Analyst / Scientist", edu:"BSc IT / MSc IT + Data Certifications", skills:"SQL, Python, Tableau", jobType:"Coding + Analysis", salary:"?4-20 LPA", future:"Very strong demand" },
+  "UIUX": { title:"UI/UX Designer", edu:"BSc IT / Design diploma", skills:"Figma, Photoshop, Wireframing", jobType:"Design-focused", salary:"?3-8 LPA", future:"Growing demand" },
+  "Management": { title:"IT Manager / Project Manager", edu:"BSc IT + Certifications", skills:"Planning, Communication, Jira", jobType:"Non-coding", salary:"?6-20 LPA", future:"Leadership track" },
+  "DBA": { title:"Database Administrator", edu:"BSc IT / MCA / Certifications", skills:"SQL, Oracle, MySQL", jobType:"Database Management", salary:"?4-12 LPA", future:"High demand" }
+};
+
+// Quiz logic
+let curQ=0, selectedIndex=null, scores={};
+Object.keys(careers).forEach(k=>scores[k]=0);
+
+// Elements
+const home=document.getElementById('home'), startBtn=document.getElementById('startBtn'),
+quizWrap=document.getElementById('quizWrap'), questionText=document.getElementById('questionText'),
+optionsList=document.getElementById('optionsList'), progressText=document.getElementById('progressText'),
+nextBtn=document.getElementById('nextBtn'), prevBtn=document.getElementById('prevBtn'),
+resultWrap=document.getElementById('resultWrap'), careerCard=document.getElementById('careerCard'),
+restartBtn=document.getElementById('restartBtn'), homeBtn=document.getElementById('homeBtn');
+
+function showHome(){ home.style.display='flex'; quizWrap.style.display='none'; resultWrap.style.display='none'; }
+function showQuiz(){ home.style.display='none'; quizWrap.style.display='flex'; resultWrap.style.display='none'; }
+function showResult(){ home.style.display='none'; quizWrap.style.display='none'; resultWrap.style.display='flex'; }
+
+function renderQuestion(){
+  const q=quizData[curQ];
+  questionText.textContent=q.q;
+  progressText.textContent=`Question ${curQ+1} of ${quizData.length}`;
+  optionsList.innerHTML=''; selectedIndex=null; nextBtn.disabled=true;
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button'); btn.className='opt-btn'; btn.innerText=opt;
+    btn.onclick=()=>{ Array.from(optionsList.children).forEach(c=>c.classList.remove('selected')); btn.classList.add('selected'); selectedIndex=i; nextBtn.disabled=false; };
+    optionsList.appendChild(btn);
+  });
+  prevBtn.style.display=curQ>0?'inline-block':'none';
+}
+
+startBtn.onclick=()=>{
+  Object.keys(scores).forEach(k=>scores[k]=0);
+  curQ=0; renderQuestion(); showQuiz();
+};
+
+nextBtn.onclick=()=>{
+  if(selectedIndex===null) return;
+  const mapKey=quizData[curQ].map[selectedIndex];
+  if(mapKey && scores[mapKey]!==undefined) scores[mapKey]+=1;
+  curQ++;
+  if(curQ<quizData.length) renderQuestion();
+  else showFinalResult();
+};
+
+prevBtn.onclick=()=>{ if(curQ>0){ curQ--; renderQuestion(); } };
+restartBtn.onclick=startBtn.onclick;
+homeBtn.onclick=showHome;
+
+function showFinalResult(){
+  // Sort careers by score
+  let sortedCareers = Object.keys(scores).sort((a,b)=>scores[b]-scores[a]);
+  careerCard.innerHTML='';
+  sortedCareers.forEach(c=>{
+    if(scores[c]>0){
+      const res=careers[c];
+      careerCard.innerHTML += `<h2>${res.title}</h2>
+      <p><strong>Education:</strong> ${res.edu}</p>
+      <p><strong>Skills:</strong> ${res.skills}</p>
+      <p><strong>Job Type:</strong> ${res.jobType}</p>
+      <p><strong>Salary:</strong> ${res.salary}</p>
+      <p><strong>Future Scope:</strong> ${res.future}</p><hr>`;
+    }
+  });
+  showResult();
+}
+</script>
+
+</body>
+</html>
+
+
